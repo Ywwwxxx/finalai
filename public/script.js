@@ -1,29 +1,48 @@
-const URL = "./";
-let model, webcam;
+// public/script.js
 
-async function init() {
-    model = await tmImage.load(URL + "model.json", URL + "metadata.json");
+const API_BASE = "https://handai-1.onrender.com"; // KENDİ Render URL'in
 
-    const webcamElement = document.getElementById("webcam");
-    webcam = await navigator.mediaDevices.getUserMedia({ video: true });
-    webcamElement.srcObject = webcam;
+// Bu fonksiyon SENDE ZATEN VAR, sadece örnek:
+// Bunu değiştirme, sadece aşağıdaki sendGestureToServer ile bağlayacağız.
+async function predictGestureFromFrame() {
+    // Buraya kendi kamera + model kodun zaten yazılı:
+    // - kameradan frame al
+    // - tfjs ile modele ver
+    // - en yüksek olasılıklı gesture'ı bul
 
-    setInterval(predict, 500);
+    // ÖRNEK DÖNÜŞ (bunu gerçekte modelden alıyorsun):
+    // return { gesture: "yumruk", probability: 0.92 };
+
+    // Şimdilik, test için:
+    return { gesture: "normal", probability: 0.99 };
 }
 
-async function predict() {
-    const prediction = await model.predict(document.getElementById("webcam"));
-
-    const best = prediction.reduce((a, b) => (a.probability > b.probability ? a : b));
-
-    fetch("/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            label: best.className,
-            mean: best.probability
-        })
-    });
+// Backend'e gesture gönderen fonksiyon
+async function sendGestureToServer(gesture, probability) {
+    try {
+        await fetch(API_BASE + "/update", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ gesture, probability })
+        });
+    } catch (err) {
+        console.error("update hatası:", err);
+    }
 }
 
-init();
+// Sürekli tahmin yapıp backend'e atan loop
+async function loop() {
+    while (true) {
+        const { gesture, probability } = await predictGestureFromFrame();
+
+        console.log("Tarayıcıda algılanan:", gesture, probability);
+
+        // Backend'e gönder
+        sendGestureToServer(gesture, probability);
+
+        // 0.5 saniyede bir
+        await new Promise(r => setTimeout(r, 500));
+    }
+}
+
+loop();
