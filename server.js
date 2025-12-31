@@ -1,18 +1,18 @@
-const express = require("express");
-const app = express();
+// Tahmin sonucunu al
+const prediction = await model.predict(webcam.capture());
 
-let lastData = { label: "None", mean: 0 };
+// En yüksek olasılıklı sınıfı bul
+let highest = prediction[0].className;
 
-app.use(express.json());
-app.use(express.static("."));
-
-app.post("/update", (req, res) => {
-    lastData = req.body;
-    res.send("OK");
-});
-
-app.get("/api/predict", (req, res) => {
-    res.json(lastData);
-});
-
-app.listen(10000, () => console.log("Server running"));
+// Yeni kategoriler: yumruk, x, dua, pence, normal
+if (highest === "yumruk") {
+    sendToRoblox("yumruk");
+} else if (highest === "x") {
+    sendToRoblox("x");
+} else if (highest === "dua") {
+    sendToRoblox("dua");
+} else if (highest === "pence") {
+    sendToRoblox("pence");
+} else if (highest === "normal") {
+    sendToRoblox("normal");
+}
