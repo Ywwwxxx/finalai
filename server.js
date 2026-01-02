@@ -14,6 +14,9 @@ let model = null;
 let latestResult = {};
 
 // Modeli yükle
+const MODEL_PATH = path.join(process.cwd(), 'model/model.json');
+let model = null;
+
 async function loadModel() {
   try {
     model = await tf.loadLayersModel(`file://${MODEL_PATH}`);
@@ -91,4 +94,5 @@ app.get('/latest', (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`API on ${PORT}`));
+
 
