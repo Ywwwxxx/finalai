@@ -14,9 +14,6 @@ let model = null;
 let latestResult = {};
 
 // Modeli yükle
-const MODEL_PATH = path.join(process.cwd(), 'model/model.json');
-let model = null;
-
 async function loadModel() {
   try {
     model = await tf.loadLayersModel(`file://${MODEL_PATH}`);
@@ -33,7 +30,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Görüntüyü tensöre çevir
 function decodeImageToTensor(buffer) {
   const imgTensor = tf.node.decodeImage(buffer, 3);
-  const resized = tf.image.resizeBilinear(imgTensor, [224, 224]);
+  const resized = tf.image.resizeBilinear(imgTensor, [224, 224]); // model input boyutu
   const normalized = resized.div(255.0);
   const batched = normalized.expandDims(0);
   imgTensor.dispose();
@@ -52,10 +49,14 @@ app.post('/predict/base64', async (req, res) => {
   try {
     if (!model) return res.status(503).json({ error: 'Model yüklenmedi' });
     const { imageBase64 } = req.body;
+    if (!imageBase64) return res.status(400).json({ error: 'imageBase64 eksik' });
+
     const buffer = Buffer.from(imageBase64, 'base64');
     const input = decodeImageToTensor(buffer);
-    const logits = model.execute(input);
+
+    const logits = model.predict(input);
     const probs = await tf.softmax(logits).array();
+
     tf.dispose([input, logits]);
 
     const p = probs[0];
@@ -72,9 +73,13 @@ app.post('/predict/base64', async (req, res) => {
 app.post('/predict/upload', upload.single('image'), async (req, res) => {
   try {
     if (!model) return res.status(503).json({ error: 'Model yüklenmedi' });
+    if (!req.file) return res.status(400).json({ error: 'Dosya eksik' });
+
     const input = decodeImageToTensor(req.file.buffer);
-    const logits = model.execute(input);
+
+    const logits = model.predict(input);
     const probs = await tf.softmax(logits).array();
+
     tf.dispose([input, logits]);
 
     const p = probs[0];
@@ -94,5 +99,3 @@ app.get('/latest', (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`API on ${PORT}`));
-
-
