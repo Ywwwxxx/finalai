@@ -16,7 +16,7 @@ let latestResult = {};
 // Modeli yükle
 async function loadModel() {
   try {
-    model = await tf.loadGraphModel(`file://${MODEL_PATH}`);
+    model = await tf.loadLayersModel(`file://${MODEL_PATH}`);
     console.log('Model başarıyla yüklendi');
   } catch (err) {
     console.error('Model yüklenirken hata:', err);
@@ -91,3 +91,4 @@ app.get('/latest', (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`API on ${PORT}`));
+
